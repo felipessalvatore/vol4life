@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def ccf_x_leads_y(x, y, ccf, nlags, head):
