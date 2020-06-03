@@ -108,3 +108,46 @@ def rank_ccf(x, y, nlags):
     """
     results = [rank_sample_ccf(x, y, h) for h in range(nlags)]
     return np.array(results)
+
+
+def test_normality_skewness(returns, alpha=0.05):
+    """
+    Let $\{x_1 ,\dots , x_T \}$ be a random sample of $X$ with $T$ observations.
+    Under the normality assumption, the sample skewness is distributed asymptotically
+    as normal with zero mean and variances $6/T$.Given an asset return series $\{r_1 ,\dots , r_T\}$,
+    to test the skewness of the returns,
+    we consider the null hypothesis $H_0 : S(r) = 0$
+    versus the alternative hypothesis $H_a : S(r) \not= 0$.
+    The t-ratio statistic of the sample is
+
+    \begin{equation}
+    t = \frac{\hat{S}(r)}{\sqrt{6/T}}
+    \end{equation}
+
+    where $\hat{S}(r)$ is the sample skewness. The decision rule is as follows.
+    Reject the null hypothesis at the $\alpha$ significance level, if $|t| > Z_{\alpha/2}$ ,
+    where $Z_{\alpha/2}$ is the upper $100(\alpha/2)$th quantile of the standard normal distribution.
+
+    :param returns: daily returns
+    :type returns: pd.Series
+    :param alpha: significant level
+    :type alpha: float
+    :return: test results
+    :rtype: pd.DataFrame
+    """
+    size = returns.shape[0]
+    skew = returns.skew()
+    name = returns.name
+
+    test_statistic = skew / np.sqrt(6 / size)
+    abs_test_statistic = np.abs(test_statistic)
+    z_alpha = stats.norm.ppf(1 - (alpha / 2))
+    p_value = (1 - stats.norm.cdf(abs_test_statistic)) * 2
+    if abs_test_statistic > z_alpha:
+        decision = r"Reject $H_0$"
+    else:
+        decision = r"Retain $H_0$"
+    df = pd.DataFrame([(name, skew, test_statistic, p_value, decision)],
+                      columns=["name", "sample skewness", "test_statistic",
+                               "p_value", "decision"])
+    return df
